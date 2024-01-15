@@ -2,15 +2,6 @@
 
 ```
                                                                                 
-                                                                                
-                                                                                
-                                                                                
-                                                                                
-                                                                                
-                                                                                
-                                                                                
-                                                                                
-                                                                                
                  .'. .,;;;.,ll;.,;,;',:;c,'cc,';c'':c:.'l:. ..                 .
                  .c; .oc;d;ckko,ol;o::dld;'xx;,cxc.:x;.lkx,.::.  .;,..;cllloolo:
   ;odoollllc:;'..     .''...,''..:l;..'''..,,'..,. .,..'','..,:okK0cl0N0:..;oKX:
@@ -30,10 +21,5 @@
        .'coollcccccccllllllcclodxxdl:'.                                         
          .':lc:::::cclloooodddol;'.                                             
            .,;,,,;;:coodolc;,..                                                 
-            ..'',,,,,,'..                                                       
-                                                                                
-                                                                                
-                                                                                
-                                                                                
-                                                                                
-                                                                                ```
+            ..'',,,,,,'..
+ ```
