@@ -55,7 +55,7 @@ def main():
     while True:
         # Espera a que el usuario diga "Hola"
         print("Di 'Hola' para empezar a grabar")
-        with sr.Microphone() as source:
+        with sr.Microphone(device_index=None) as source:  # Usando el dispositivo predeterminado
             recognizer = sr.Recognizer()
             audio = recognizer.listen(source)
             try:
