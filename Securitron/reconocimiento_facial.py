@@ -1,19 +1,50 @@
-
 from pathlib import Path
 import cv2
 import face_recognition as fr
 from PIL import Image as im
 import os
 
-
-
 dir = Path("images")
 
+
+# COMPROBAR SI EL USUARIO ESTÁ REGISTRADO Y DARLE LA BIENVENIDA
+def check_user(name):
+    fotos = cargar_imagenes(name)
+    fotos = asignar_perfil_color(fotos)
+    face2check = recognize_user()
+    face2check = asignar_perfil_color(face2check)
+    facial_code = get_cod_faces(fotos)
+    same_person = compare_all_with_control(facial_code, face2check)
+
+    if same_person:
+        print('bienvenido, ' + name)
+    else:
+        print('quieto ahí, no tengo idea de quién eres. Abandona mi zona antes de que te fría con un rayo láser')
+
+
 # TOMAR UNA CAPTURA DEL ROSTRO PARA IDENTIFICAR AL USUARIO
+def recognize_user():
+    print('A ver, mírame bien')
+    captura = cv2.VideoCapture(0)
+
+    while (True):
+        ok, frame = captura.read()
+        cv2.imshow('frame', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    captura.release()
+    cv2.destroyAllWindows()
+
+    if not ok:
+        print('¡No puedor, no puedor!')
+    else:
+        return fr.face_encodings(frame)
 
 
 # TOMAR UNA CAPTURA DEL ROSTRO PARA REGISTRAR AL USUARIO
-def get_photo(name):
+def register_user(name):
+    print('A ver, mírame bien')
     captura = cv2.VideoCapture(0)
 
     while (True):
@@ -36,20 +67,13 @@ def get_photo(name):
 
         return ectory
 
+
 def count_equals(name):
     counter = 0
     for pic in os.listdir(dir):
         if pic.__contains__(name):
             counter += 1
     return counter
-
-# COMPROBAR SI EL USUARIO ESTÁ REGISTRADO Y DARLE LA BIENVENIDA
-def check_user(name):
-    fotos = cargar_imagenes(name)
-    fotos = asignar_perfil_color(fotos)
-    locations = localizar_cara(fotos)
-    facial_code = get_cod_faces(fotos)
-    compare_all_with_control()
 
 
 def cargar_imagenes(name):
@@ -70,7 +94,7 @@ def asignar_perfil_color(fotos_list):
 def localizar_cara(fotos_list):
     locations = []
     for i in fotos_list:
-        locations.append(fr.face_locations(i)[0]) #puede detectar más caras... nos quedamos con la primera
+        locations.append(fr.face_locations(i)[0])  # puede detectar más caras... nos quedamos con la primera
     return locations
 
 
@@ -80,17 +104,15 @@ def get_cod_faces(fotos_list):
         cod_faces.append(fr.face_encodings(i)[0])
     return cod_faces
 
+
 def show_imgs(fotos_list):
     for index, f in enumerate(fotos_list):
         cv2.imshow(f'Foto {index}', f)
 
 
 # Por defecto, el valor de la distancia para determinar si es true o false es 0.6
-def compare_all_with_control(cara_cod_list):
+def compare_all_with_control(cara_cod_list, face2check):
     control = False
     for i, fc in enumerate(cara_cod_list):
-        if i > 0:
-            # Con fr.compare_faces([control_cod], cara_cod_comparar, 0.3) podemos modificar el límite por el que determinaría si es true
-            control = fr.compare_faces([cara_cod_list[0]], fc)
-
+        control = fr.compare_faces(face2check, fc)
     return control
