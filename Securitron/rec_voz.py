@@ -3,12 +3,10 @@ import sys
 
 import openai
 import requests
-
-openai.api_key = "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"
 import speech_recognition as sr
 import pyttsx3
 
-# Configura la clave API de OpenAI
+openai.api_key = "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"
 
 # Guardar referencia al stderr original
 stderr_original = sys.stderr
@@ -16,7 +14,6 @@ stderr_original = sys.stderr
 # Redirigir stderr a /dev/null
 with open(os.devnull, 'w') as fnull:
     sys.stderr = fnull
-    # Importar las bibliotecas que causan los mensajes de ALSA
 
     # Restaurar stderr al valor original después de que las bibliotecas hayan sido importadas
     sys.stderr = stderr_original
@@ -24,7 +21,20 @@ with open(os.devnull, 'w') as fnull:
 # Inicializa el motor TTS
 engine = pyttsx3.init()
 
-def transcribe_audio_to_test(filename):
+# Obtener y configurar la voz en español si está disponible
+voices = engine.getProperty('voices')
+spanish_voice_id = None
+for voice in voices:
+    # Aquí se busca 'es' en el identificador de idioma de la voz
+    if 'es' in voice.languages:
+        spanish_voice_id = voice.id
+        break
+
+if spanish_voice_id:
+    engine.setProperty('voice', spanish_voice_id)
+else:
+    print("No se encontró una voz en español.")
+def transcribe_audio_to_text(filename):
     recognizer = sr.Recognizer()
     with sr.AudioFile(filename) as source:
         audio = recognizer.record(source)
@@ -33,7 +43,6 @@ def transcribe_audio_to_test(filename):
     except Exception as e:
         print(f"Error en la transcripción: {e}")
         return None
-
 
 def generate_response(prompt):
     try:
@@ -70,14 +79,24 @@ def generate_response(prompt):
         print(f"Error al generar la respuesta: {e}")
         return None
 
+def record_voice(prompt, file_name="input.wav", timeout=10):
+    """
+    Grabar la voz del usuario y guardarla en un archivo.
+    :param prompt: Texto que se le indica al usuario antes de grabar.
+    :param file_name: Nombre del archivo donde se guardará la grabación.
+    :param timeout: Tiempo máximo de grabación en segundos.
+    :return: Nombre del archivo de audio grabado.
+    """
+    speak_text(prompt)
+    with sr.Microphone(device_index=13) as source:
+        recognizer = sr.Recognizer()
+        recognizer.adjust_for_ambient_noise(source, duration=1)
+        print(prompt)
+        audio = recognizer.listen(source, phrase_time_limit=timeout)
+        with open(file_name, "wb") as f:
+            f.write(audio.get_wav_data())
+    return file_name
 
-voices = engine.getProperty('voices')
-spanish_voice = None
-for voice in voices:
-    if "spanish" in voice.languages:
-        spanish_voice = voice.id
-if spanish_voice is not None:
-    engine.setProperty('voice', spanish_voice)
 
 
 def speak_text(text):
@@ -86,42 +105,49 @@ def speak_text(text):
 
 
 def main():
+    saludo_inicial_realizado = False  # Variable de control para el saludo inicial
     while True:
-        # Espera a que el usuario diga "Hola"
-        print("Di 'Hola' para empezar a grabar")
-        with sr.Microphone(device_index=13) as source:  # Usando el dispositivo con índice 13
+        with sr.Microphone(device_index=13) as source:
             recognizer = sr.Recognizer()
-            recognizer.adjust_for_ambient_noise(source)
-            audio = recognizer.listen(source)
-            try:
-                transcription = recognizer.recognize_google(audio, language="es")
-                print(f"Transcripción inicial: {transcription}")  # Imprime lo que se entendió después de decir "Hola"
-                if "hola" in transcription.lower():
-                    # Graba audio
-                    filename = "input.wav"
-                    print("Dime qué quieres")
-                    with sr.Microphone(device_index=13) as source:  # Asegurándose de usar el dispositivo con índice 13
-                        recognizer = sr.Recognizer()
-                        recognizer.adjust_for_ambient_noise(source)
-                        source.pause_threshold = 1
-                        audio = recognizer.listen(source, phrase_time_limit=None, timeout=None)
-                        with open(filename, "wb") as f:
-                            f.write(audio.get_wav_data())
-                    # Transcribe el audio
-                    text = transcribe_audio_to_test(filename)
+            recognizer.adjust_for_ambient_noise(source, duration=1)
+
+            if not saludo_inicial_realizado:
+                # Espera a que el usuario diga "Hola"
+                engine.say("Di 'Hola' para empezar a grabar")
+                engine.runAndWait()
+                audio = recognizer.listen(source, phrase_time_limit=None, timeout=5)  # 5 segundos de espera máxima
+                try:
+                    transcription = recognizer.recognize_google(audio, language="es")
                     print(
-                        f"Transcripción de lo que el usuario quiere: {text}")  # Imprime la transcripción del audio grabado
-                    if text:
-                        print(f"Usuario: {text}")
+                        f"Transcripción inicial: {transcription}")  # Imprime lo que se entendió después de decir "Hola"
+                    if "hola" in transcription.lower():
+                        saludo_inicial_realizado = True  # Establece la variable a True después de reconocer "Hola"
+                    else:
+                        continue  # Si no se dice "Hola", vuelve a intentar
+                except sr.WaitTimeoutError:
+                    print("No se detectó audio en el tiempo de espera establecido. Vuelve a intentar.")
+                    continue  # Si hay un timeout, vuelve a intentar
+                except Exception as e:
+                    print(f"Error en el reconocimiento de voz: {e}")
+                    continue  # Si hay un error, vuelve a intentar
 
-                        # Genera la respuesta
-                        response = generate_response(text)
-                        print(f"Bot: {response}")
-
-                        # Lee la respuesta utilizando GPT-3
-                        speak_text(response)
-            except Exception as e:
-                print(f"Error en el reconocimiento de voz: {e}")
+            # Proceso de grabación y respuesta después de decir "Hola"
+            print("Dime qué quieres")
+            recognizer.pause_threshold = 1.0
+            audio = recognizer.listen(source, phrase_time_limit=10,
+                                      timeout=5)  # 10 segundos de grabación máxima, 5 segundos de espera máxima
+            with open("input.wav", "wb") as f:
+                f.write(audio.get_wav_data())
+            # Transcribe el audio
+            text = transcribe_audio_to_text("input.wav")
+            print(f"Transcripción de lo que el usuario quiere: {text}")  # Imprime la transcripción del audio grabado
+            if text:
+                print(f"Usuario: {text}")
+                # Genera la respuesta
+                response = generate_response(text)
+                print(f"Bot: {response}")
+                # Lee la respuesta utilizando TTS
+                speak_text(response)
 
 
 if __name__ == "__main__":
