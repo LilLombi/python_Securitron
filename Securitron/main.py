@@ -1,3 +1,11 @@
+
+from pathlib import Path
+from reconocimiento_facial import *
+
+# Press the green button in the gutter to run the script.
+if __name__ == '__main__':
+    count_equals("daniel")
+=======
 from User import User
 from rec_voz import record_voice, transcribe_audio_to_text, speak_text
 from reconocimiento_facial import get_photo, check_user
