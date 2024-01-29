@@ -1,20 +1,31 @@
 from User import User
 from rec_voz import record_voice, transcribe_audio_to_text, speak_text
-from reconocimiento_facial import get_photo, check_user
+from reconocimiento_facial import register_user, check_user
 
 
 def get_user_data():
-    # Grabar y transcribir el nombre
-    name_audio = record_voice("Por favor, di tu nombre:")
-    name = transcribe_audio_to_text(name_audio)
+    name, surname, age = None, None, None
 
-    # Grabar y transcribir el apellido
-    surname_audio = record_voice("Por favor, di tu apellido:")
-    surname = transcribe_audio_to_text(surname_audio)
+    while not name:
+        # Grabar y transcribir el nombre
+        name_audio = record_voice("Por favor, di tu nombre:")
+        name = transcribe_audio_to_text(name_audio)
+        if not name:
+            print("No pude entender el nombre, intentemos de nuevo.")
 
-    # Grabar y transcribir la edad
-    age_audio = record_voice("Por favor, di tu edad:")
-    age = transcribe_audio_to_text(age_audio)
+    while not surname:
+        # Grabar y transcribir el apellido
+        surname_audio = record_voice("Por favor, di tu apellido:")
+        surname = transcribe_audio_to_text(surname_audio)
+        if not surname:
+            print("No pude entender el apellido, intentemos de nuevo.")
+
+    while not age:
+        # Grabar y transcribir la edad
+        age_audio = record_voice("Por favor, di tu edad:")
+        age = transcribe_audio_to_text(age_audio)
+        if not age:
+            print("No pude entender la edad, intentemos de nuevo.")
 
     return name, surname, age
 
@@ -32,7 +43,7 @@ def main():
     # Tomar foto del usuario
     print(f"Hola {user.name}, por favor mira a la cámara para tomar una foto.")
     speak_text(f"Hola {user.name}, por favor mira a la cámara para tomar una foto.")
-    filename = get_photo(f"{user.name}_{user.surname}")
+    filename = register_user(f"{user.name}_{user.surname}")
 
     # Verificar si el usuario está registrado y si coincide con la persona en la foto
     user_exists, user_matched = check_user(user.name)

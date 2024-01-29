@@ -1,6 +1,9 @@
 import os
 import sys
-
+from gtts import gTTS
+from io import BytesIO
+from pygame import mixer
+import tempfile
 import openai
 import requests
 import speech_recognition as sr
@@ -30,10 +33,6 @@ for voice in voices:
         spanish_voice_id = voice.id
         break
 
-if spanish_voice_id:
-    engine.setProperty('voice', spanish_voice_id)
-else:
-    print("No se encontró una voz en español.")
 def transcribe_audio_to_text(filename):
     recognizer = sr.Recognizer()
     with sr.AudioFile(filename) as source:
@@ -99,9 +98,26 @@ def record_voice(prompt, file_name="input.wav", timeout=10):
 
 
 
-def speak_text(text):
-    engine.say(text)
-    engine.runAndWait()
+def speak_text(text, lang='es'):
+    try:
+        # Crear un objeto gTTS para el texto y el idioma especificado (español por defecto)
+        tts = gTTS(text, lang=lang)
+
+        # Guardar el audio en un buffer
+        fp = BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+
+        # Cargar y reproducir el audio
+        mixer.init()
+        mixer.music.load(fp)
+        mixer.music.play()
+
+        # Esperar a que termine la reproducción del audio
+        while mixer.music.get_busy():
+            continue
+    except Exception as e:
+        print(f"Error al usar gTTS: {e}")
 
 
 def main():
